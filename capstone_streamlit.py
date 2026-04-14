@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# PAGE CONFIGURATION 
+# PAGE CONFIGURATION
 
 st.set_page_config(
     page_title="Legal Document Assistant",
@@ -25,73 +25,322 @@ st.set_page_config(
 
 @st.cache_resource(show_spinner="Loading Legal Assistant ...")
 def load_agent():
-    """
-    Import the agent module and cache the compiled graph.
-    @st.cache_resource ensures the knowledge base is built exactly once,
-    even across multiple user sessions.
-    """
     from agent import graph, run_query as _run_query
     return graph, _run_query
 
 
-# Load agent (cached)
 _graph, run_query = load_agent()
 
 # CUSTOM CSS
 
 st.markdown("""
 <style>
-/* General layout */
-.stApp { background-color: #f4f6f9; font-family: 'Segoe UI', sans-serif; }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
-/* Header banner */
+/* ── Root variables ── */
+:root {
+    --navy:      #0b1426;
+    --navy-mid:  #111d35;
+    --navy-card: #162040;
+    --navy-border: #1e2d50;
+    --blue:      #2563eb;
+    --blue-light: #3b82f6;
+    --gold:      #f59e0b;
+    --gold-dim:  #d97706;
+    --text-primary:   #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted:     #64748b;
+    --green:  #10b981;
+    --yellow: #f59e0b;
+    --red:    #ef4444;
+    --cyan:   #06b6d4;
+}
+
+/* ── Global reset ── */
+html, body, .stApp, [data-testid="stAppViewContainer"],
+[data-testid="stMain"], .main, .block-container {
+    background-color: #0b1426 !important;
+    color: #f1f5f9 !important;
+    font-family: 'Inter', -apple-system, sans-serif !important;
+}
+
+/* ── Remove Streamlit default padding ── */
+.block-container {
+    padding-top: 1.5rem !important;
+    padding-bottom: 2rem !important;
+    max-width: 860px !important;
+}
+
+/* ── ALL text elements ── */
+p, span, div, li, label, small, h1, h2, h3, h4, h5, h6,
+.stMarkdown, .stMarkdown p, .stMarkdown li,
+[data-testid="stMarkdownContainer"],
+[data-testid="stMarkdownContainer"] p,
+[data-testid="stMarkdownContainer"] li,
+[data-testid="stMarkdownContainer"] span {
+    color: #f1f5f9 !important;
+}
+
+/* ── Sidebar ── */
+[data-testid="stSidebar"] {
+    background-color: #0d1a30 !important;
+    border-right: 1px solid #1e2d50 !important;
+}
+[data-testid="stSidebar"] * {
+    color: #f1f5f9 !important;
+}
+[data-testid="stSidebar"] .stMarkdown p,
+[data-testid="stSidebar"] small {
+    color: #94a3b8 !important;
+}
+[data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] h3 {
+    color: #f1f5f9 !important;
+    font-weight: 600 !important;
+}
+
+/* ── Sidebar divider ── */
+[data-testid="stSidebar"] hr {
+    border-color: #1e2d50 !important;
+}
+
+/* ── Buttons ── */
+.stButton > button {
+    background-color: #162040 !important;
+    color: #cbd5e1 !important;
+    border: 1px solid #1e2d50 !important;
+    border-radius: 8px !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 0.82rem !important;
+    font-weight: 400 !important;
+    transition: all 0.15s ease !important;
+}
+.stButton > button:hover {
+    background-color: #1e3a6e !important;
+    color: #f1f5f9 !important;
+    border-color: #2563eb !important;
+}
+.stButton > button[kind="secondary"] {
+    background-color: #1e2d50 !important;
+    color: #94a3b8 !important;
+}
+.stButton > button[kind="secondary"]:hover {
+    background-color: #2563eb !important;
+    color: #fff !important;
+}
+
+/* ── Metrics ── */
+[data-testid="stMetricValue"],
+[data-testid="stMetricLabel"],
+[data-testid="metric-container"] {
+    color: #f1f5f9 !important;
+}
+[data-testid="stMetricValue"] {
+    font-size: 1.4rem !important;
+    font-weight: 700 !important;
+    color: #60a5fa !important;
+}
+[data-testid="stMetricLabel"] {
+    color: #94a3b8 !important;
+    font-size: 0.75rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+}
+
+/* ── Progress bar ── */
+[data-testid="stProgressBar"] > div {
+    background-color: #1e2d50 !important;
+}
+[data-testid="stProgressBar"] > div > div {
+    background: linear-gradient(90deg, #2563eb, #06b6d4) !important;
+}
+[data-testid="stProgressBar"] + div {
+    color: #94a3b8 !important;
+    font-size: 0.78rem !important;
+}
+
+/* ── Expander ── */
+[data-testid="stExpander"] {
+    background-color: #111d35 !important;
+    border: 1px solid #1e2d50 !important;
+    border-radius: 8px !important;
+}
+[data-testid="stExpander"] summary {
+    color: #94a3b8 !important;
+    font-size: 0.8rem !important;
+}
+[data-testid="stExpander"] summary:hover {
+    color: #f1f5f9 !important;
+}
+
+/* ── Chat messages ── */
+[data-testid="stChatMessage"] {
+    background-color: transparent !important;
+    border: none !important;
+    padding: 4px 0 !important;
+}
+
+/* User message bubble */
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {
+    background-color: #1e3a6e !important;
+    border-radius: 12px !important;
+    border: 1px solid #2563eb !important;
+    padding: 12px 16px !important;
+    margin: 6px 0 !important;
+}
+
+/* Assistant message bubble */
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"]) {
+    background-color: #111d35 !important;
+    border-radius: 12px !important;
+    border: 1px solid #1e2d50 !important;
+    padding: 12px 16px !important;
+    margin: 6px 0 !important;
+}
+
+/* Avatar icons */
+[data-testid="stChatMessageAvatarUser"],
+[data-testid="stChatMessageAvatarAssistant"] {
+    background-color: #162040 !important;
+    border: 1px solid #1e2d50 !important;
+}
+
+/* ── Chat input ── */
+[data-testid="stChatInput"] {
+    background-color: #111d35 !important;
+    border: 1px solid #1e2d50 !important;
+    border-radius: 12px !important;
+}
+[data-testid="stChatInput"] textarea {
+    background-color: transparent !important;
+    color: #f1f5f9 !important;
+    caret-color: #2563eb !important;
+}
+[data-testid="stChatInput"] textarea::placeholder {
+    color: #475569 !important;
+}
+[data-testid="stChatInput"]:focus-within {
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 2px rgba(37,99,235,0.15) !important;
+}
+
+/* ── Spinner text ── */
+[data-testid="stSpinner"] p {
+    color: #94a3b8 !important;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: #0b1426; }
+::-webkit-scrollbar-thumb { background: #1e2d50; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #2563eb; }
+
+/* ── Custom components ── */
 .legal-header {
-    background: linear-gradient(135deg, #0d1b4b 0%, #1a3a8f 60%, #2d5be3 100%);
+    background: linear-gradient(135deg, #0f2460 0%, #1a3a8f 50%, #1e40af 100%);
     color: white;
-    padding: 24px 32px;
+    padding: 22px 28px;
     border-radius: 12px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 14px rgba(13,27,75,0.35);
+    margin-bottom: 18px;
+    border: 1px solid #2563eb;
+    box-shadow: 0 4px 24px rgba(37,99,235,0.2);
 }
-.legal-header h1 { margin: 0; font-size: 2rem; }
-.legal-header p  { margin: 4px 0 0 0; font-size: 0.95rem; opacity: 0.85; }
+.legal-header h1 {
+    margin: 0;
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: #fff !important;
+    letter-spacing: -0.02em;
+}
+.legal-header p {
+    margin: 5px 0 0 0;
+    font-size: 0.88rem;
+    color: rgba(255,255,255,0.75) !important;
+}
 
-/* Disclaimer box */
 .disclaimer {
-    background: #fff8e1;
-    border-left: 5px solid #f9a825;
+    background: rgba(245,158,11,0.08);
+    border-left: 4px solid #f59e0b;
     border-radius: 6px;
-    padding: 12px 16px;
-    font-size: 0.86rem;
-    margin-bottom: 16px;
+    padding: 10px 14px;
+    font-size: 0.83rem;
+    color: #fcd34d !important;
+    margin-bottom: 18px;
 }
+.disclaimer b { color: #fde68a !important; }
 
-/* Metric badges */
 .badge {
     display: inline-block;
-    padding: 3px 10px;
-    border-radius: 12px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    margin-right: 6px;
-}
-.badge-green  { background:#d4edda; color:#155724; }
-.badge-yellow { background:#fff3cd; color:#856404; }
-.badge-red    { background:#f8d7da; color:#721c24; }
-.badge-blue   { background:#cce5ff; color:#004085; }
-
-/* Route chip */
-.route-chip {
-    background: #e8eaf6;
-    color: #283593;
-    padding: 2px 10px;
+    padding: 2px 9px;
     border-radius: 20px;
-    font-size: 0.78rem;
-    font-family: monospace;
+    font-size: 0.73rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    margin-right: 5px;
+    font-family: 'Inter', sans-serif;
+}
+.badge-green  { background: rgba(16,185,129,0.15); color: #34d399 !important; border: 1px solid rgba(16,185,129,0.3); }
+.badge-yellow { background: rgba(245,158,11,0.15); color: #fbbf24 !important; border: 1px solid rgba(245,158,11,0.3); }
+.badge-red    { background: rgba(239,68,68,0.15);  color: #f87171 !important; border: 1px solid rgba(239,68,68,0.3); }
+.badge-blue   { background: rgba(6,182,212,0.15);  color: #22d3ee !important; border: 1px solid rgba(6,182,212,0.3); }
+
+.route-chip {
+    background: rgba(37,99,235,0.12);
+    color: #60a5fa !important;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-family: 'JetBrains Mono', monospace;
+    border: 1px solid rgba(37,99,235,0.25);
 }
 
-/* Sidebar */
-[data-testid="stSidebar"] { background-color: #ffffff; border-right: 1px solid #e0e0e0; }
+.welcome-box {
+    background: linear-gradient(135deg, #111d35, #162040);
+    border: 1px solid #1e2d50;
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin: 12px 0 24px;
+}
+.welcome-box h3 {
+    color: #f1f5f9 !important;
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+.welcome-box p {
+    color: #94a3b8 !important;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    margin-bottom: 16px;
+}
+.welcome-box ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+.welcome-box ul li {
+    background: rgba(37,99,235,0.08);
+    border: 1px solid rgba(37,99,235,0.2);
+    border-radius: 8px;
+    padding: 9px 14px;
+    font-size: 0.82rem;
+    color: #93c5fd !important;
+    cursor: default;
+}
+
+.topic-pill {
+    display: inline-block;
+    background: rgba(37,99,235,0.08);
+    border: 1px solid rgba(37,99,235,0.2);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    color: #93c5fd !important;
+    margin: 3px 2px;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -101,8 +350,8 @@ st.markdown("""
 def _init_session():
     defaults = {
         "thread_id":    str(uuid.uuid4()),
-        "chat_history": [],     # list of {role, content, meta?}
-        "conv_history": [],     # raw messages list passed to agent
+        "chat_history": [],
+        "conv_history": [],
         "total_queries": 0,
         "scores":       [],
         "pending_q":    None,
@@ -121,7 +370,6 @@ with st.sidebar:
     st.markdown("## Legal Assistant")
     st.divider()
 
-    # Session metrics
     st.markdown("### Session Stats")
     col_a, col_b = st.columns(2)
     with col_a:
@@ -136,8 +384,7 @@ with st.sidebar:
 
     st.divider()
 
-    # Available topics
-    st.markdown("### Knowledge Base Topics")
+    st.markdown("### Knowledge Base")
     topics = [
         "Contract Law Basics",
         "Non-Disclosure Agreements",
@@ -150,13 +397,12 @@ with st.sidebar:
         "Common Legal Clauses",
         "Liability & Indemnity",
     ]
-    for t in topics:
-        st.markdown(f"<small>- {t}</small>", unsafe_allow_html=True)
+    topic_html = "".join(f"<span class='topic-pill'>{t}</span>" for t in topics)
+    st.markdown(topic_html, unsafe_allow_html=True)
 
     st.divider()
 
-    # Quick-action sample questions
-    st.markdown("### Try a Sample Question")
+    st.markdown("### Sample Questions")
     samples = [
         "What is an NDA?",
         "Explain force majeure",
@@ -172,7 +418,6 @@ with st.sidebar:
 
     st.divider()
 
-    # New conversation
     if st.button("New Conversation", use_container_width=True, type="secondary"):
         st.session_state.thread_id    = str(uuid.uuid4())
         st.session_state.chat_history = []
@@ -184,13 +429,13 @@ with st.sidebar:
 
     st.divider()
     st.markdown(
-        "<small>Session ID: <code>{}</code></small>".format(
+        "<small style='color:#475569'>Session: <code style='color:#60a5fa'>{}</code></small>".format(
             st.session_state.thread_id[:12] + "..."
         ),
         unsafe_allow_html=True,
     )
     st.markdown(
-        "<small><b>Disclaimer:</b> Informational responses only. Not legal advice.</small>",
+        "<small style='color:#475569'>Informational use only. Not legal advice.</small>",
         unsafe_allow_html=True,
     )
 
@@ -200,15 +445,15 @@ with st.sidebar:
 st.markdown("""
 <div class='legal-header'>
     <h1>Legal Document Assistant</h1>
-    <p>Legal information for paralegals and junior lawyers</p>
+    <p>Legal information for paralegals and junior lawyers &nbsp;·&nbsp; Powered by RAG + Agentic AI</p>
 </div>
 """, unsafe_allow_html=True)
 
 st.markdown("""
 <div class='disclaimer'>
-    <b>Important Notice:</b> This system provides informational responses based
-    on a curated legal knowledge base. It does <b>NOT</b> constitute legal advice.
-    Always consult a qualified attorney for advice specific to your situation.
+    <b>Notice:</b> Responses are based on a curated legal knowledge base.
+    This system does <b>NOT</b> provide legal advice.
+    Always consult a qualified attorney for your specific situation.
 </div>
 """, unsafe_allow_html=True)
 
@@ -229,23 +474,22 @@ def _route_chip(route: str) -> str:
     return f"<span class='route-chip'>{route}</span>"
 
 
-
 # CHAT HISTORY DISPLAY
-
 
 if not st.session_state.chat_history:
     st.markdown("""
-### Welcome!
-
-This assistant helps you quickly understand legal documents and concepts.
-Start by typing a question below or selecting a sample from the sidebar.
-
-**Example questions:**
-- *What is a non-disclosure agreement?*
-- *Explain the elements of a valid contract.*
-- *What rights do data subjects have under GDPR?*
-- *What is the difference between void and voidable contracts?*
-""")
+<div class='welcome-box'>
+    <h3>Welcome to Legal Document Assistant</h3>
+    <p>Ask questions about legal concepts, document types, clauses, and more.
+    The assistant searches a curated legal knowledge base and evaluates its own answers before responding.</p>
+    <ul>
+        <li>What is a non-disclosure agreement?</li>
+        <li>Explain elements of a valid contract</li>
+        <li>What rights do data subjects have under GDPR?</li>
+        <li>Difference between void and voidable contracts?</li>
+    </ul>
+</div>
+""", unsafe_allow_html=True)
 
 for msg in st.session_state.chat_history:
     if msg["role"] == "user":
@@ -280,13 +524,8 @@ for msg in st.session_state.chat_history:
 
 # INPUT HANDLING
 
-# Consume pending question (set by sidebar button)
 pending = st.session_state.pop("pending_q", None)
-
-# Chat input widget
 user_input = st.chat_input("Ask a legal question ...", key="chat_input")
-
-# Direct input takes precedence over sidebar button
 active_question = user_input or pending
 
 if active_question:
